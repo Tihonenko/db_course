@@ -1,3 +1,6 @@
+-- for plsql
+set serveroutput on;
+--
 
 SELECT * FROM "User";
 select * from ROLE;
