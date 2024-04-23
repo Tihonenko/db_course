@@ -82,13 +82,3 @@ END;
 
 
 ----------------------------------------
---SELECT * FROM user_errors;
-
----- test create user ----
-DECLARE
-    v_user_id RAW(16);
-BEGIN
-    create_user('test4', 'admin1234', 'test', v_user_id);
-    DBMS_OUTPUT.PUT_LINE('Новый пользователь успешно добавлен. Идентификатор пользователя: ' || v_user_id);
-END;
-
