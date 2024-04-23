@@ -1,3 +1,6 @@
+-- for plsql
+set serveroutput on;
+--
 
 ---- create user ----
 CREATE OR REPLACE PROCEDURE create_user (
@@ -52,29 +55,40 @@ EXCEPTION
         RAISE;
 END;
 
+---- update user ----
+CREATE OR REPLACE PROCEDURE update_user (
+    p_user_id IN RAW,
+    p_name IN NVARCHAR2 DEFAULT NULL,
+    p_second_name IN NVARCHAR2 DEFAULT NULL,
+    p_email IN NVARCHAR2 DEFAULT NULL,
+    p_address IN NVARCHAR2 DEFAULT NULL
+)
+AS
+BEGIN
+    UPDATE "User"
+    SET 
+        name = COALESCE(p_name, name),
+        second_name = COALESCE(p_second_name, second_name),
+        email = COALESCE(p_email, email),
+        address = COALESCE(p_address, address)
+    WHERE user_id = p_user_id;
 
+    COMMIT;
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        RAISE;
+END;
+
+
+----------------------------------------
 --SELECT * FROM user_errors;
 
 ---- test create user ----
 DECLARE
     v_user_id RAW(16);
 BEGIN
-    create_user('test3', 'admin1234', 'test', v_user_id);
+    create_user('test4', 'admin1234', 'test', v_user_id);
     DBMS_OUTPUT.PUT_LINE('Новый пользователь успешно добавлен. Идентификатор пользователя: ' || v_user_id);
-END;
-
-SELECT * FROM "User";
-
----- test auth user ----
-DECLARE
-    l_is_authenticated BOOLEAN;
-BEGIN
-    authenticate_user('test3', 'admin1', l_is_authenticated);
-
-    IF l_is_authenticated THEN
-        DBMS_OUTPUT.PUT_LINE('Authentication successful!');
-    ELSE
-        DBMS_OUTPUT.PUT_LINE('Authentication failed.');
-    END IF;
 END;
 
