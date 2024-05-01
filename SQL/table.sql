@@ -1,81 +1,93 @@
 
 --CREATE TABLE
 
+
 ---- BOOK ----
 CREATE TABLE Book (
-    book_id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
-    title NVARCHAR2(255) NOT NULL,
-    description NCLOB,
+    book_id NVARCHAR2(255) PRIMARY KEY,
+    title NVARCHAR2(255) NOT NULL UNIQUE,
+    description NVARCHAR2(255),
     publication_date DATE,
-    publisher_id RAW(16) 
+    publisher_id NVARCHAR2(255),
+    isbn NVARCHAR2(255) NOT NULL UNIQUE,
+    tags NVARCHAR2(60),
+    copies INTEGER,
+    num_pages INTEGER,
+    file_name NVARCHAR2(255),
+    image_name NVARCHAR2(255)
 );
 
 ---- AUTHOR ----
 CREATE TABLE Author (
-    author_id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
-    name NVARCHAR2(255) NOT NULL
+    author_id NVARCHAR2(255) PRIMARY KEY,
+    name NVARCHAR2(255) NOT NULL UNIQUE
 );
 
 ---- BOOK_AUTHOR ----
 CREATE TABLE Book_Author (
-    book_id RAW(16),
-    author_id RAW(16),
+    book_id NVARCHAR2(255),
+    author_id NVARCHAR2(255),
     PRIMARY KEY (book_id, author_id)
 );
 
 ---- CATEGORY ----
 CREATE TABLE Category (
-    category_id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
-    name NVARCHAR2(255) NOT NULL
+    category_id NVARCHAR2(255) PRIMARY KEY,
+    name NVARCHAR2(255) NOT NULL UNIQUE
 );
 
 ---- CATEGORY_BOOK ----
 CREATE TABLE Categories_Book (
-    book_id RAW(16),
-    category_id RAW(16),
+    book_id NVARCHAR2(255),
+    category_id NVARCHAR2(255),
     PRIMARY KEY (book_id, category_id)
 );
 
 ---- PUBLISHER ----
 CREATE TABLE Publisher (
-    publisher_id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
-    name NVARCHAR2(255) NOT NULL
+    publisher_id NVARCHAR2(255) PRIMARY KEY,
+    name NVARCHAR2(255) NOT NULL UNIQUE
 );
 
 ---- USER ----
 CREATE TABLE "User" (
-    user_id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
-    username NVARCHAR2(255) NOT NULL UNIQUE,
+    user_id NVARCHAR2(255) PRIMARY KEY,
+    login NVARCHAR2(255) NOT NULL UNIQUE,
     password RAW(64) NOT NULL,
-    name NVARCHAR2(255) NOT NULL;
-    role_id RAW(16) 
+    role_id NVARCHAR2(255),
+    name NVARCHAR2(255) NOT NULL,
+    second_name NVARCHAR2(255),
+    email NVARCHAR2(255),
+    address NVARCHAR2(255)
 );
 
 ---- FAVORITES ----
 CREATE TABLE Favorites (
-    user_id RAW(16),
-    book_id RAW(16),
+    user_id NVARCHAR2(255),
+    book_id NVARCHAR2(255),
     PRIMARY KEY (user_id, book_id)
 );
 
 ---- ORDER ----
 CREATE TABLE "Order" (
-    order_id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
-    user_id RAW(16),
+    order_id NVARCHAR2(255) PRIMARY KEY,
+    user_id NVARCHAR2(255),
     order_date DATE,
-    status_id RAW(16)
+    status_id NVARCHAR2(255)
 );
 
 ---- STATUS ----
 CREATE TABLE Status (
-    status_id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
-    name NVARCHAR2(255) NOT NULL
+    status_id NVARCHAR2(255) PRIMARY KEY,
+    start_time DATE,
+    end_time DATE
 );
 
 ---- ROLE ----
 CREATE TABLE Role (
-    role_id RAW(16) DEFAULT SYS_GUID() PRIMARY KEY,
-    name NVARCHAR2(255) NOT NULL
+    role_id NVARCHAR2(255) PRIMARY KEY,
+    name NVARCHAR2(255) NOT NULL UNIQUE
+
 );
 
 
@@ -102,21 +114,8 @@ ALTER TABLE Favorites ADD CONSTRAINT fk_fav_book FOREIGN KEY (book_id) REFERENCE
 ---- Order table ----
 ALTER TABLE "Order" ADD CONSTRAINT fk_order_user FOREIGN KEY (user_id) REFERENCES "User"(user_id);
 ALTER TABLE "Order" ADD CONSTRAINT fk_order_status FOREIGN KEY (status_id) REFERENCES Status(status_id); 
-
----- ADD MORE ----
-
----- "User" ----
-ALTER TABLE "User" ADD email NVARCHAR2(255);
-ALTER TABLE "User" ADD address NVARCHAR2(255);
-ALTER TABLE "User" ADD (name NVARCHAR2(255) NOT NULL);
-ALTER TABLE "User" ADD second_name NVARCHAR2(255);
-
----- BOOK ----
-ALTER TABLE Book ADD (isbn NVARCHAR2(255) NOT NULL);
-ALTER TABLE Book ADD tags NVARCHAR2(60);
-ALTER TABLE Book ADD num_pages INTEGER; 
-ALTER TABLE Book ADD copies INTEGER;
+ALTER TABLE "Order" ADD CONSTRAINT fk_order_book FOREIGN KEY (book_id) REFERENCES Book(book_id);
 
 ---- STATUS ----
-ALTER TABLE Status ADD (start_time DATE NOT NULL);
-ALTER TABLE Status ADD (end_time DATE NOT NULL); 
+ALTER TABLE Status
+ADD CONSTRAINT chk_status_name CHECK (name IN ('Выдан', 'Завершен', 'В процессе', 'Отменен'));

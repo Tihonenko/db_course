@@ -1,0 +1,18 @@
+------
+--CREATE OR REPLACE FUNCTION search_books (
+--    p_search_term IN NVARCHAR2
+--)
+--RETURN SYS_REFCURSOR
+--IS
+--  v_cursor SYS_REFCURSOR;
+--BEGIN
+--  OPEN v_cursor FOR
+--    SELECT b.title, a.name AS author_name
+--    FROM Book b
+--    LEFT JOIN Book_Author ba ON b.book_id = ba.book_id
+--    LEFT JOIN Author a ON ba.author_id = a.author_id
+--    WHERE UPPER(b.title) LIKE '%' || UPPER(p_search_term) || '%' OR UPPER(a.name) LIKE '%' || UPPER(p_search_term) || '%';
+--
+--  RETURN v_cursor;
+--END;
+
