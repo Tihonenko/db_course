@@ -1,14 +1,7 @@
 import Database from "@src/DB/DB";
 import { IBook } from "@src/dto/book/book.dto";
 import { IError } from "@src/dto/error.dto";
-import { query, Request, Response } from "express";
 import * as OracleDB from "oracledb";
-
-interface ResultWithCursor {
-	outBinds: {
-		result: typeof OracleDB.CURSOR;
-	};
-}
 
 class BookService {
 	constructor() {}
@@ -26,9 +19,9 @@ class BookService {
 
 		if (!query.rows || query.rows.length <= 0) {
 			return (result = {
-				message: "Книга не найдена",
-				code: 400,
-				data: null,
+				message: "Книги не найдены",
+				code: 200,
+				data: query.rows,
 			});
 		}
 
@@ -79,11 +72,14 @@ class BookService {
 			});
 		}
 
+		console.log(book.publication_date);
+
+		console.log(book.coverName);
+
 		await connection.execute(
 			`DECLARE
-					v_book_id NVARCHAR(255);
 				BEGIN
-						 create_book(
+						create_book(
 						   :p_title,
 						   :p_description,
 						   :p_publication_date,
@@ -94,24 +90,19 @@ class BookService {
 						   :p_copies,
 						   :p_file_name,
 						   :p_image_name
-						 );
-
-						 SELECT book_id INTO v_book_id
-						 FROM Book
-						 WHERE isbn = :p_isbn;
-
+						);
 					   END;`,
 			{
 				p_title: book.title,
-				p_description: { val: book.description }, // CLOB
+				p_description: book.description,
 				p_publication_date: book.publication_date,
 				p_publisher_name: book.publisher_name,
 				p_isbn: book.isbn,
 				p_tags: book.tags,
-				p_num_pages: book.num_pages,
-				p_copies: book.copies,
-				p_file_name: book.coverName,
-				p_image_name: book.pdfName,
+				p_num_pages: { val: book.num_pages },
+				p_copies: { val: book.copies },
+				p_file_name: book.pdfName,
+				p_image_name: book.coverName,
 			}
 		);
 
@@ -296,7 +287,7 @@ class BookService {
 		}
 
 		return (result = {
-			message: "Книги автора",
+			message: "Список всех книг",
 			code: 200,
 			data: query.rows,
 		});
@@ -315,7 +306,7 @@ class BookService {
 
 		if (!isSelect.rows || isSelect.rows.length <= 0) {
 			return (result = {
-				message: "Этой книги и так нету :D",
+				message: "Book not found :D",
 				code: 400,
 				data: null,
 			});
@@ -359,8 +350,6 @@ class BookService {
 			});
 		}
 
-		console.log(book);
-
 		await connection.execute(
 			`BEGIN
 					update_book(
@@ -371,8 +360,8 @@ class BookService {
 						:p_publisher_name,
 						:p_isbn,
 						:p_tags,
-						:p_num_pages,
 						:p_copies,
+						:p_num_pages,
 						:p_file_name,
 						:p_image_name
 					);
@@ -385,10 +374,10 @@ class BookService {
 				p_publisher_name: book.publisher_name,
 				p_isbn: book.isbn,
 				p_tags: book.tags,
-				p_num_pages: book.num_pages,
 				p_copies: book.copies,
-				p_file_name: book.coverName,
-				p_image_name: book.pdfName,
+				p_num_pages: book.num_pages,
+				p_file_name: book.pdfName,
+				p_image_name: book.coverName,
 			}
 		);
 

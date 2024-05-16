@@ -2,7 +2,6 @@ import { Router } from "express";
 import BooksController from "@controller/books.controller";
 import upload from "@src/middleware/upload";
 import BookService from "@service/Book/book.service";
-import BookController from "@controller/books.controller";
 
 const bookService = new BookService();
 const booksController = new BooksController(bookService);
@@ -19,6 +18,7 @@ router.post(
 );
 router.get("/book/search", booksController.searchBook);
 router.get("/book/:id", booksController.getBookById);
+
 router.get("/books/all", booksController.getAllBooks);
 
 router.patch(

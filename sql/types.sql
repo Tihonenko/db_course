@@ -64,3 +64,20 @@ CREATE OR REPLACE TYPE category_info_type AS OBJECT (
 );
 
 CREATE OR REPLACE TYPE category_info_table AS TABLE OF category_info_type;
+
+---- index
+CREATE INDEX idx_book_title ON Book (UPPER(title));
+CREATE INDEX idx_author_name ON Author (UPPER(name));
+CREATE INDEX idx_category_name ON Category (UPPER(name));
+
+---- user view
+CREATE OR REPLACE VIEW user_info_view AS
+SELECT 
+  user_id, 
+  login, 
+  role_id, 
+  name, 
+  second_name, 
+  email, 
+  address
+FROM "User";

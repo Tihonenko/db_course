@@ -1,16 +1,18 @@
-import Database from "@src/DB/DB";
-import { IBook } from "@src/dto/book/book.dto";
-import BookService from "@src/service/Book/book.service";
-import { Request, Response } from "express";
+import { IBook } from '@src/dto/book/book.dto';
+import Email from '@src/email/Email';
+import BookService from '@src/service/Book/book.service';
+import { Request, Response } from 'express';
 
 type fileType = Express.Multer.File | undefined;
 type fileNameType = string | undefined;
 
 class BookController {
 	private _service: BookService;
+	private _email: Email;
 
 	constructor(service: BookService) {
 		this._service = service;
+		this._email = new Email();
 	}
 
 	createBook = async (req: Request, res: Response) => {
@@ -22,24 +24,46 @@ class BookController {
 				publisher_name,
 				isbn,
 				tags,
-				num_pages,
-				copies,
 			} = req.body;
 
-			const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+			let { num_pages, copies } = req.body;
 
-			if (!files["cover"] || !files["pdf"]) {
+			const files = req.files as {
+				[fieldname: string]: Express.Multer.File[];
+			};
+
+			let cover: fileType;
+			let pdf: fileType;
+			let coverName: fileNameType;
+			let pdfName: fileNameType;
+			if (files && (files['cover'] || files['pdf'])) {
+				const cover = files['cover'] ? files['cover'][0] : undefined;
+				const pdf = files['pdf'] ? files['pdf'][0] : undefined;
+
+				if (cover) {
+					coverName = cover.filename;
+				}
+				if (pdf) {
+					pdfName = pdf.filename;
+				}
+			}
+
+			if (!num_pages) {
+				num_pages = '0';
+			}
+
+			if (!copies) {
+				copies = '0';
+			}
+
+			if (isNaN(Number(num_pages)) || isNaN(Number(copies))) {
 				return res.status(400).json({
-					message: "Файл обязателен",
+					code: 400,
+					message: 'Страницы или копии должны быть числом',
 				});
 			}
 
-			const cover: fileType = files["cover"][0];
-			const pdf: fileType = files["pdf"][0];
-
-			const coverName: fileNameType = cover.filename;
-			const pdfName: fileNameType = pdf.filename;
-
+			console.log(req.body);
 			const Book: IBook = {
 				title,
 				description,
@@ -54,6 +78,14 @@ class BookController {
 			};
 
 			const result = await this._service.createBook(Book);
+
+			if (result.code === 200) {
+				this._email.sendEmailYandex(
+					`была создана новая книга ${Book.title}`,
+					'новые данные в таблице Book'
+				);
+			}
+
 			return res.status(result.code).json({
 				code: result.code,
 				message: result.message,
@@ -61,7 +93,7 @@ class BookController {
 			});
 		} catch (err) {
 			console.log(err);
-			return res.status(500).json({ message: "Ошибка сервера" });
+			return res.status(500).json({ message: 'Ошибка сервера' });
 		}
 	};
 
@@ -79,7 +111,7 @@ class BookController {
 		} catch (err) {
 			console.log(err);
 			res.status(500).json({
-				message: "Ошибка сервера",
+				message: 'Ошибка сервера',
 			});
 		}
 	};
@@ -98,7 +130,7 @@ class BookController {
 		} catch (err) {
 			console.log(err);
 			res.status(500).json({
-				message: "Ошибка сервера",
+				message: 'Ошибка сервера',
 			});
 		}
 	};
@@ -109,17 +141,18 @@ class BookController {
 			let { page, size } = req.query;
 
 			if (!page) {
-				page = "1";
+				page = '1';
 			}
 
 			if (!size) {
-				size = "10";
+				size = '10';
 			}
 
 			if (isNaN(Number(page)) || isNaN(Number(size))) {
 				return res.status(400).json({
 					code: 400,
-					message: "Параметры пагинации (page и size) должны быть числами",
+					message:
+						'Параметры пагинации (page и size) должны быть числами',
 				});
 			}
 			const result = await this._service.getBookByAuthor(
@@ -136,7 +169,7 @@ class BookController {
 		} catch (err) {
 			console.log(err);
 			res.status(500).json({
-				message: "Ошибка сервера",
+				message: 'Ошибка сервера',
 			});
 		}
 	};
@@ -146,17 +179,18 @@ class BookController {
 			const { id } = req.params;
 			let { page, size } = req.query;
 			if (!page) {
-				page = "1";
+				page = '1';
 			}
 
 			if (!size) {
-				size = "10";
+				size = '10';
 			}
 
 			if (isNaN(Number(page)) || isNaN(Number(size))) {
 				return res.status(400).json({
 					code: 400,
-					message: "Параметры пагинации (page и size) должны быть числами",
+					message:
+						'Параметры пагинации (page и size) должны быть числами',
 				});
 			}
 			const result = await this._service.getBookByCategory(
@@ -173,7 +207,7 @@ class BookController {
 		} catch (err) {
 			console.log(err);
 			res.status(500).json({
-				message: "Ошибка сервера",
+				message: 'Ошибка сервера',
 			});
 		}
 	};
@@ -184,17 +218,18 @@ class BookController {
 			let { page, size } = req.query;
 
 			if (!page) {
-				page = "1";
+				page = '1';
 			}
 
 			if (!size) {
-				size = "10";
+				size = '10';
 			}
 
 			if (isNaN(Number(page)) || isNaN(Number(size))) {
 				return res.status(400).json({
 					code: 400,
-					message: "Параметры пагинации (page и size) должны быть числами",
+					message:
+						'Параметры пагинации (page и size) должны быть числами',
 				});
 			}
 
@@ -212,7 +247,7 @@ class BookController {
 		} catch (err) {
 			console.log(err);
 			res.status(500).json({
-				message: "Ошибка сервера",
+				message: 'Ошибка сервера',
 			});
 		}
 	};
@@ -222,17 +257,18 @@ class BookController {
 			let { page, size } = req.query;
 
 			if (!page) {
-				page = "1";
+				page = '1';
 			}
 
 			if (!size) {
-				size = "10";
+				size = '10';
 			}
 
 			if (isNaN(Number(page)) || isNaN(Number(size))) {
 				return res.status(400).json({
 					code: 400,
-					message: "Параметры пагинации (page и size) должны быть числами",
+					message:
+						'Параметры пагинации (page и size) должны быть числами',
 				});
 			}
 
@@ -249,7 +285,7 @@ class BookController {
 		} catch (err) {
 			console.log(err);
 			res.status(500).json({
-				message: "Ошибка сервера",
+				message: 'Ошибка сервера',
 			});
 		}
 	};
@@ -260,6 +296,13 @@ class BookController {
 
 			const result = await this._service.deleteBook(id);
 
+			if (result.code === 200) {
+				this._email.sendEmailYandex(
+					'была удалена книга',
+					'удалена книга в таблице Book'
+				);
+			}
+
 			return res.status(result.code).json({
 				code: result.code,
 				message: result.message,
@@ -268,7 +311,7 @@ class BookController {
 		} catch (err) {
 			console.log(err);
 			res.status(500).json({
-				message: "Ошибка сервера",
+				message: 'Ошибка сервера',
 			});
 		}
 	};
@@ -282,23 +325,38 @@ class BookController {
 				publisher_name,
 				isbn,
 				tags,
-				num_pages,
-				copies,
 			} = req.body;
 
-			console.log(req.body);
+			let { num_pages, copies } = req.body;
+
+			if (!num_pages) {
+				num_pages = '0';
+			}
+
+			if (!copies) {
+				copies = '0';
+			}
+
+			if (isNaN(Number(num_pages)) || isNaN(Number(copies))) {
+				return res.status(400).json({
+					code: 400,
+					message: 'Страницы или копии должны быть числом',
+				});
+			}
 
 			const { id } = req.params;
 
-			const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+			const files = req.files as {
+				[fieldname: string]: Express.Multer.File[];
+			};
 
 			let cover: fileType;
 			let pdf: fileType;
 			let coverName: fileNameType;
 			let pdfName: fileNameType;
-			if (files && (files["cover"] || files["pdf"])) {
-				const cover = files["cover"] ? files["cover"][0] : undefined;
-				const pdf = files["pdf"] ? files["pdf"][0] : undefined;
+			if (files && (files['cover'] || files['pdf'])) {
+				const cover = files['cover'] ? files['cover'][0] : undefined;
+				const pdf = files['pdf'] ? files['pdf'][0] : undefined;
 
 				if (cover) {
 					coverName = cover.filename;
@@ -322,6 +380,14 @@ class BookController {
 			};
 
 			const result = await this._service.updateBook(id, book);
+
+			if (result.code === 200) {
+				this._email.sendEmailYandex(
+					`была обнавлена книга  ${book.title}`,
+					`новые данные в таблице Book`
+				);
+			}
+
 			return res.status(result.code).json({
 				code: result.code,
 				message: result.message,
@@ -330,7 +396,7 @@ class BookController {
 		} catch (err) {
 			console.log(err);
 			res.status(500).json({
-				message: "Ошибка сервера",
+				message: 'Ошибка сервера',
 			});
 		}
 	};

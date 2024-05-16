@@ -1,16 +1,28 @@
 -- for plsql
 set serveroutput on;
 --
+--password123
+--
 
-delete from book;
+select * from Author;
+
+
+select * from "User";
+
+
+delete from "User" where login = 'user_test';
 commit;
+
+SELECT role_id FROM "User" WHERE login = 'useryes12';
+
+select name from Role where role_id = '467A4138494A377941736A675977494145717A3530673D3D';
 
 SELECT * FROM "User";
 select * from book;
 
 --SELECT * FROM user_errors;
 
----- test 100r rows
+---- test 100k rows
 DECLARE
   v_category_id NVARCHAR2(255);
   v_name NVARCHAR2(255);
@@ -26,18 +38,19 @@ END;
 
 select * from TABLE(get_all_categories());
 
-SELECT COUNT(*) AS total_rows
-FROM Category;
+SELECT * FROM Category;
 
 ---- test create user ----
 DECLARE
     v_user_id NVARCHAR2(255);
+    v_role_id NVARCHAR2(255);
 BEGIN
     create_user(
-      p_login => N'test_user1',  -- Имя пользователя
+      p_login => N'MANAGER',  -- Имя пользователя
       p_password => N'password123', -- Пароль
-      p_name => N'Test',       -- Имя      
-      p_user_id => v_user_id
+      p_name => N'MANAGER',       -- Имя      
+      p_user_id => v_user_id,
+      p_role_id => v_role_id
     );
 END;
 
@@ -99,7 +112,8 @@ BEGIN
   create_book(
     p_title => 'Laladala',
     p_isbn => '978-24-224-22',
-    p_copies => 10
+    p_copies => 10,
+    p_publication_date => '02-MY-2005'
   );
   IF v_book_id IS NOT NULL THEN
     DBMS_OUTPUT.PUT_LINE('Тест создания книги пройден.');
@@ -114,18 +128,7 @@ DECLARE
   v_author_id NVARCHAR2(255);
 BEGIN
   -- 1. Создаем тестового автора
-  create_author('DADA');
-
-  -- 2. Проверяем, что автор создан (по имени)
-  SELECT author_id INTO v_author_id
-  FROM Author
-  WHERE name = 'Test Author';
-
-  IF v_author_id IS NOT NULL THEN
-    DBMS_OUTPUT.PUT_LINE('Тест создания автора пройден.');
-  ELSE
-    DBMS_OUTPUT.PUT_LINE('Тест создания автора не пройден.');
-  END IF;
+  ADMIN_LIB_PDB.create_author('LUSI');
 
 END;
 
@@ -141,7 +144,7 @@ BEGIN
   SELECT book_id
   INTO v_book_id
   FROM Book
-  WHERE title = 'Test orac';
+  WHERE title = 'BOOK YES';
 
   SELECT author_id
   INTO v_author_id
@@ -174,7 +177,7 @@ select * from Book;
 BEGIN
   create_order_status(
     '467A4138494A373141736A675977494145717A3530673D3D', 
-    '463042435536754A417A2F675977494145717A5856413D3D', 
+    '463373784D6A575441776A67597749414571795238413D3D', 
     0, -- Дата окончания через 14 дней
     0, -- Добавить 2 часа
     30, -- Добавить 30 минут
@@ -184,7 +187,7 @@ END;
 
 SELECT * FROM Status;
 
-SELECT * FROM Book WHERE book_id = '467A712B66434D68416F33675977494145717A614D773D3D';
+SELECT * FROM Book WHERE book_id = '46337449524A616541302F67597749414571784B75773D3D';
 
 select * from Book;
 SELECT * FROM "User";
@@ -199,33 +202,42 @@ END;
 
 BEGIN
   delete_book_set_null(
-    p_book_id => '467A712B66434D68416F33675977494145717A614D773D3D'
-  );
+    p_book_id => '467A712B66434E59416F33675977494145717A614D773D3D' );
+END;
+
+
+BEGIN
+    update_book('463042435536754A417A2F675977494145717A5856413D3D', 'hello');
 END;
 
 select * from author;
 
-SELECT * FROM TABLE(search_books('t'));
+SELECT * FROM TABLE(search_books('b'));
 SELECT * FROM TABLE(get_book_by_id('467A712B66434E59416F33675977494145717A614D773D3D'));
 SELECT * FROM TABLE(get_books_by_author('467A712B66434E61416F33675977494145717A614D773D3D', 1, 10));
 SELECT * FROM TABLE(get_books_by_author('467A712B66434E61416F33675977494145717A614D773D3D', 1, 10));
 SELECT * FROM TABLE(get_all_books());
 SELECT * FROM TABLE(get_all_authors());
+SELECT * FROM TABLE(get_orders_with_status());
+SELECT * FROM TABLE(get_all_categories());
+SELECT * FROM TABLE(delete_author_set_null('462B574D37637A4841303767597749414571775650673D3D'));
+SELECT * FROM TABLE(get_favorite_books_by_user('47477575397A766A43427667597749414571795266673D3D'));
 
 
 
-DECLARE
-         		v_books book_result_table;
-       		BEGIN
-        	 	v_books := get_all_books();
-         		DBMS_OUTPUT.PUT_LINE(v_books);
-       		END;
 
-SELECT *
-FROM
-    v$session;
+BEGIN
+  delete_author_set_null('462B574D37637A4841303767597749414571775650673D3D');
+END;
 
+EXPLAIN PLAN FOR SELECT * FROM Category where name = 'Category 25100';
 
+SELECT * FROM Category where name = 'Category 25100';
 
+DELETE FROM category;
+commit;
+SELECT * FROM TABLE(DBMS_XPLAN.display);
+
+--47477575397A766A43427667597749414571795266673D3D
 -- BOOK 467A712B66434D68416F33675977494145717A614D773D3D
 -- USER 467A4138494A373141736A675977494145717A3530673D3D

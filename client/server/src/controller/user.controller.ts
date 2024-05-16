@@ -1,57 +1,162 @@
-import Database from "@src/DB/DB";
-import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
-import OracleDB from "oracledb";
+import { IFavorite } from '@src/dto/favorite/favorite.dto';
+import { IUserCreate } from '@src/dto/user/user.dto';
+import Email from '@src/email/Email';
+import UserService from '@src/service/User/user.service';
+import { Request, Response } from 'express';
 
 class UserController {
-	async createUser(req: Request, res: Response) {
-		const { login, password, name, secondName, email, address } = req.body;
-		const connection = await Database.getConnection();
+	_service: UserService;
+	private _email: Email;
 
-		const isLoginUsed = await connection.execute(
-			`
-            SELECT * FROM "User" WHERE login = :login
-            `,
-			[login],
-			{
-				outFormat: OracleDB.OUT_FORMAT_OBJECT,
-			}
-		);
+	constructor(service: UserService) {
+		this._service = service;
+		this._email = new Email();
+	}
 
-		if (isLoginUsed && isLoginUsed.rows && isLoginUsed.rows.length > 0) {
-			return res
-				.status(409)
-				.json({ message: "Пользователь с таким логином уже существует" });
-		}
-
+	createUser = async (req: Request, res: Response) => {
 		try {
-			const result = await connection.execute(
-				`BEGIN
-              create_user(:login, :password, :name, :secondName, :email, :address, p_user_id => :userId);
-            END;`,
-				{
-					login,
-					password,
-					name,
-					secondName,
-					email,
-					address,
-					userId: { dir: OracleDB.BIND_OUT, type: OracleDB.STRING },
-				}
-			);
+			const { login, password, name, secondName, email, address } =
+				req.body;
 
-			const userId = result.outBinds;
+			const user: IUserCreate = {
+				login,
+				password,
+				name,
+				second_name: secondName,
+				email,
+				address,
+			};
 
-			const token = jwt.sign({ userId, login }, "your_secret_key", {
-				expiresIn: "7d",
+			const result = await this._service.createUser(user);
+
+			if (result.code === 200) {
+				this._email.sendEmailYandex(
+					'был зарегистрирован новый пользователь',
+					'новый USER в базе данных'
+				);
+			}
+
+			return res.status(result.code).json({
+				code: result.code,
+				message: result.message,
+				data: result.data,
 			});
-
-			res.status(201).json({ message: "Пользователь создан", token });
 		} catch (err) {
 			console.error(err);
-			res.status(500).json({ message: "Ошибка создания пользователя" });
+			res.status(500).json({ message: 'Ошибка создания пользователя' });
 		}
-	}
+	};
+
+	getAllUsers = async (req: Request, res: Response) => {
+		try {
+			const result = await this._service.getAllUsers();
+
+			return res.status(result.code).json({
+				code: result.code,
+				message: result.message,
+				data: result.data,
+			});
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ message: 'Server error' });
+		}
+	};
+
+	login = async (req: Request, res: Response) => {
+		try {
+			const { login, password } = req.body;
+
+			const result = await this._service.login(login, password);
+
+			return res.status(result.code).json({
+				code: result.code,
+				message: result.message,
+				data: result.data,
+			});
+		} catch (err) {
+			console.error(err);
+			res.status(500).json({ message: 'Server error' });
+		}
+	};
+
+	addFavorite = async (req: Request, res: Response) => {
+		try {
+			const { book_id, user_id } = req.body;
+
+			const favorite: IFavorite = {
+				BOOK_ID: book_id,
+				USER_ID: user_id,
+			};
+
+			const result = await this._service.addFavorite(favorite);
+
+			if (result.code === 200) {
+				this._email.sendEmailYandex(
+					'Была дабавлена какая-то книга в favorite',
+					'новая favorite книга у пользователя'
+				);
+			}
+
+			return res.status(result.code).json({
+				code: result.code,
+				message: result.message,
+				data: result.data,
+			});
+		} catch (err) {
+			console.log(err);
+			res.status(500).json({ message: 'Server error' });
+		}
+	};
+
+	deleteFavorite = async (req: Request, res: Response) => {
+		try {
+			const { book_id, user_id } = req.body;
+
+			const favorite: IFavorite = {
+				BOOK_ID: book_id,
+				USER_ID: user_id,
+			};
+
+			const result = await this._service.deleteFavorite(favorite);
+
+			if (result.code === 200) {
+				this._email.sendEmailYandex(
+					'Была удалена какая-то книга в favorite',
+					'удалена favorite книга у пользователя'
+				);
+			}
+
+			return res.status(result.code).json({
+				code: result.code,
+				message: result.message,
+				data: result.data,
+			});
+		} catch (err) {
+			console.log(err);
+			res.status(500).json({ message: 'Server error' });
+		}
+	};
+
+	getFavorite = async (req: Request, res: Response) => {
+		try {
+			const { id } = req.params;
+
+			const favorite: IFavorite = {
+				USER_ID: id,
+			};
+
+			const result = await this._service.getFavorite(favorite);
+
+			return res.status(result.code).json({
+				code: result.code,
+				message: result.message,
+				data: result.data,
+			});
+		} catch (err) {
+			console.log(err);
+			res.status(500).json({ message: 'Server error' });
+		}
+	};
 }
 
 export default UserController;
